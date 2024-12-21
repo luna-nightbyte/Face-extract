@@ -1,7 +1,8 @@
-import mediapipe
-import cv2
 
+import cv2
 import mediapipe as mp
+
+from PIL import Image
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
@@ -71,8 +72,8 @@ class Face_Detector:
     def get_image(self, image_path: str ):
         return self.mod.get_image(image_path)
     
-    def save_image(self, image_path: str ):
-        return self.mod.get_image(image_path)
+    def save_image(self,output_path: str, image ):
+        return self.mod.save_image(output_path, image)
  
     def is_valid_model(self, model):
         return Face_Detector() == model
@@ -106,6 +107,9 @@ class Face_Detector:
         
         def get_image(self, image_path: str ):
             return cv2.imread(image_path)
+        
+        def save_image(self,output_path: str, image):
+            cv2.imwrite(output_path, image)
  
 
     class v1:
@@ -114,7 +118,7 @@ class Face_Detector:
                 int(model)+1
             except:
                 return "invalid model settings!"
-            self.detector = mediapipe.solutions.face_detection.FaceDetection(
+            self.detector = mp.solutions.face_detection.FaceDetection(
                 model_selection=model, 
                 min_detection_confidence=conf
                 )
@@ -133,3 +137,5 @@ class Face_Detector:
                 return None
             return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
+        def save_image(self, output_path:str, image):
+            image.save(output_path)
