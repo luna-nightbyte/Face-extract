@@ -1,0 +1,9 @@
+__pycache__
+output/*
+
+**.jpg
+**.png
+**.mp4
+**.mov
+
+**.tflite
