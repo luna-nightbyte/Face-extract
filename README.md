@@ -4,7 +4,20 @@ Just a simple face extration script that also saves original image x,y boxes for
 
 This is intended as a project to extract a frame, modify it and place it back in with a different script using the generated csv file.
 
-Use [v1](https://github.com/luna-nightbyte/Face-extract/blob/main/internal/models/face_detector.py#L106) for best results as v2 is not fully integrated.
+
+
+## Version
+[face_detector.py](https://github.com/luna-nightbyte/Face-extract/blob/main/internal/models/face_detector.py): contains two models that can be selected. 
+Use v1 for best results as v2 is not fully integrated.
+```python
+class v1:
+
+...
+
+class v2:
+```
+
+## Usage
 
 ```
 usage: main.py [-h] --input INPUT [--out OUT] [--size SIZE] [--csv CSV] [--model_selection MODEL_SELECTION] [--confidence CONFIDENCE] [--version VERSION]
@@ -24,3 +37,13 @@ options:
                         Minimum confidence to trigger image saving
   --version VERSION     Model version
 ```
+### v1
+
+```
+python3 main.py --input my/input/folder --version 1 --model_selection 0 --size 720 --confidence 0.5
+```
+### v2
+```
+python3 main.py --input my/input/folder --version 2 --model_selection detector.tflite --size 720
+```
+
