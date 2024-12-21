@@ -17,7 +17,14 @@ class v1:
 class v2:
 ```
 
+## Requirements
+
+```
+pip3 install -r requirements.txt
+```
+
 ## Usage
+
 
 ```
 usage: main.py [-h] --input INPUT [--out OUT] [--size SIZE] [--csv CSV] [--model_selection MODEL_SELECTION] [--confidence CONFIDENCE] [--version VERSION]
