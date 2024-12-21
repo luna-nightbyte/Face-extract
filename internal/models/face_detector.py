@@ -45,10 +45,6 @@ class Face_Detector:
         self.version = v
         self.mod = None
         self.modelName = None
-        self.setVersion(name)
-        return self
-    
-    def setVersion(self, name):
         if not self.version > 0:
             print("invalid version")
             return
@@ -58,22 +54,30 @@ class Face_Detector:
         if self.version == 2:
             self.mod = self.v2()
             self.modelName = f"{name}"
-        
-    def up(self):
+        return self
+    
+    def is_initialyzed(self):
         return self.detector is not None  
     
     def name(self):
         return self.modelName  
     
-    def load(self, model, conf):
+    def load_detector(self, model, conf):
         self.detector = self.mod.load(model,conf)
         
-    def detect(self, rgb_image: cv2.typing.MatLike, image_path: str ):
+    def detect_face(self, rgb_image: cv2.typing.MatLike, image_path: str ):
         return self.mod.detect(rgb_image,image_path)
     
-    def getImage(self, image_path: str ):
-        return self.mod.getImage(image_path)
+    def get_image(self, image_path: str ):
+        return self.mod.get_image(image_path)
+    
+    def save_image(self, image_path: str ):
+        return self.mod.get_image(image_path)
  
+    def is_valid_model(self, model):
+        return Face_Detector() == model
+    
+
     class v2:
         def load(self, model, conf_unused):
             try:
@@ -99,7 +103,8 @@ class Face_Detector:
             img = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
             results = self.detector.detect(img)
             return convert_detection_results_to_loop_format(results)
-        def getImage(self, image_path: str ):
+        
+        def get_image(self, image_path: str ):
             return cv2.imread(image_path)
  
 
@@ -122,12 +127,9 @@ class Face_Detector:
             
             return results
         
-        def getImage(self, image_path: str ):
+        def get_image(self, image_path: str ):
             image = cv2.imread(image_path)
             if image is None:
                 return None
             return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
-    def isValidModel(self, model):
-        return Face_Detector() == model
-    
