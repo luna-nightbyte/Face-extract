@@ -2,12 +2,7 @@
 import argparse
 import os
 import csv
-import cv2
 
-
-
-
-AI = None
 # Initialize Mediapipe face detection
 def run():
     parser = argparse.ArgumentParser(description="Extract faces from images with an extra margin around the face.")
@@ -26,31 +21,40 @@ def run():
     csv_file = os.path.join(output_dir, args.csv)
     output_size = (args.size,args.size)
     
-    import internal.models.face_detector as faceDet
-    import internal.detection as detection
+    import internal.local as I
     
-    AI = faceDet.Face_Detector().init(args.version, args.model_selection)
+    internal = I.Internal(
+        args.version,
+        args.model_selection, 
+        input_dir, 
+        output_dir, 
+        csv_file
+        )
     
-    if AI.version == 2:
+    if internal.face_detection.version == 2:
         modelName = f"{args.model_selection}"
     else:
         modelName = args.model_selection
         
-    AI.load_detector(modelName, args.confidence)
-    if not AI.is_initialyzed():
+    internal.face_detection.load_detector(modelName, args.confidence)
+    if not internal.face_detection.is_initialyzed():
         print("Error loading model")
         return
     
     os.makedirs(output_dir, exist_ok=True)
-    with open(csv_file, mode="w", newline="") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(["filename", "center_x,center_y", "was_resized", "original_bounding_box"])
-        csvfile.close()
+    err = internal.csv.write(["filename", "center_x,center_y", "was_resized", "original_bounding_box"])
+    if err:
+        print(err)
+    else:
+        err = internal.csv.close()
+    if err:
+        print(err)
         
     for file in os.listdir(input_dir):
         if os.path.isfile(os.path.join(input_dir, file)):
             
-            results = detection.process(os.path.join(input_dir, file),output_size,AI)
+            results = internal.face_detection.processor.run(os.path.join(input_dir, file),output_size, internal)
+            
             if not results:
                 continue
             if type(results) == str:
@@ -62,13 +66,15 @@ def run():
             image, data = results[0], results[1]
             
             output_image_path = os.path.join(output_dir,os.path.basename(data[0]))
+        
+            internal.face_detection.save_image(output_image_path, image)
             
-            
-            
-            AI.save_image(output_image_path, image)
-            print(f" output image saved as {output_image_path}")
+            print(f"Image saved as {output_image_path}")
             # Write csv data for later use
-            with open(csv_file, mode="a", newline="") as csvfile:
-                writer = csv.writer(csvfile)
-                writer.writerows([data])
-            csvfile.close()
+            err = internal.csv.write([data])
+            if err:
+                print(err)
+            else:
+                err = internal.csv.close()
+            if err:
+                print(err)

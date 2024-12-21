@@ -1,20 +1,19 @@
 import cv2
 from PIL import Image
 
-from internal.models.face_detector import Face_Detector
-
-def process(image_path: str, OUTPUT_SIZE: tuple[512, 512],model: Face_Detector): 
-        
-        
-        cv2Image = model.get_image(image_path)
+from internal.local import Internal as I
+class Detection:
+    def run(self, image_path: str, OUTPUT_SIZE: tuple[512, 512],internal: I): 
+ 
+        cv2Image = internal.face_detection.get_image(image_path)
         if cv2Image is None:
             return
         
         ih, iw, _ = cv2Image.shape
-        print(ih,iw)
+        
         # Detect faces
-        import internal.models.face_detector as faceDet
-        results = model.detect_face(cv2Image, image_path)
+        import internal.detection.face_detector as faceDet
+        results = internal.face_detection.detect_face(cv2Image, image_path)
         
         if not results:
             return f"No detections in {image_path}"

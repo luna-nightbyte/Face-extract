@@ -1,11 +1,13 @@
 
 import cv2
+import os
 import mediapipe as mp
 
 from PIL import Image
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
 
+import internal.detection.detection as detection    
 
 class RelativeBoundingBox:
     def __init__(self, x, y, width, height):
@@ -40,8 +42,9 @@ def convert_detection_results_to_loop_format(detection_results):
     return ResultsWrapper(detection_results.detections)
 
 
-class Face_Detector:
-    def init(self,v: int, name):
+class Core:
+    def __init__(self,v: int, name):
+        self.processor = detection.Detection()
         self.detector = None
         self.version = v
         self.mod = None
@@ -55,7 +58,7 @@ class Face_Detector:
         if self.version == 2:
             self.mod = self.v2()
             self.modelName = f"{name}"
-        return self
+        
     
     def is_initialyzed(self):
         return self.detector is not None  
@@ -76,7 +79,7 @@ class Face_Detector:
         return self.mod.save_image(output_path, image)
  
     def is_valid_model(self, model):
-        return Face_Detector() == model
+        return Core() == model
     
 
     class v2:
@@ -108,8 +111,13 @@ class Face_Detector:
         def get_image(self, image_path: str ):
             return cv2.imread(image_path)
         
-        def save_image(self,output_path: str, image):
-            cv2.imwrite(output_path, image)
+        def save_image(self,output_path: str, image: Image.Image):
+            
+            tmp_image_path = output_path.replace(os.path.basename(output_path),f"tmp_{os.path.basename(output_path)}")
+            image.save(tmp_image_path)
+            out_image = mp.Image.create_from_file(tmp_image_path)
+            cv2.imwrite(output_path, out_image)
+            os.remove(tmp_image_path)
  
 
     class v1:
