@@ -47,8 +47,8 @@ def run():
         print(err)
     else:
         err = internal.csv.close()
-    if err:
-        print(err)
+        if err:
+            print(err)
         
     for file in os.listdir(input_dir):
         if os.path.isfile(os.path.join(input_dir, file)):
@@ -76,5 +76,5 @@ def run():
                 print(err)
             else:
                 err = internal.csv.close()
-            if err:
-                print(err)
+                if err:
+                    print(err)
