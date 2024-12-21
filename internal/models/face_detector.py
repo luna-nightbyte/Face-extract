@@ -66,7 +66,6 @@ class Face_Detector:
         return self.modelName  
     
     def load(self, model, conf):
-        self.modelName=model
         self.detector = self.mod.load(model,conf)
         
     def detect(self, rgb_image: cv2.typing.MatLike, image_path: str ):
