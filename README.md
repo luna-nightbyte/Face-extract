@@ -19,7 +19,7 @@ options:
   --csv CSV             csv filename for later use. Default's to 'data.csv'
   --model_selection MODEL_SELECTION
                         Model selection: 0 or 1. 0 to select a short-range model that works best for faces within 2 meters from the camera, and 1 for a full-range
-                        model best for faces within 5 meters.
+                        model best for faces within 5 meters. Use as model path for v2 
   --confidence CONFIDENCE
                         Minimum confidence to trigger image saving
   --version VERSION     Model version
