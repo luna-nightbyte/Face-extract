@@ -75,10 +75,6 @@ class Core:
 
             # Convert bounding box to absolute coordinates
             x1, x2, y1, y2 = self.bbox(bboxC, iw, ih)
-            x1 = int(x1 / 2)
-            x2 = int(x2 / 2)
-            y1 = int(y1 / 2)
-            y2 = int(y2 / 2)
             
             if x1 >= iw or y1 >= ih or x2 <= 0 or y2 <= 0:
                 print(f"Invalid bounding box after scaling: [x1={x1}, y1={y1}, x2={x2}, y2={y2}]")

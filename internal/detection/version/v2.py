@@ -73,5 +73,5 @@ class Model:
         cv2.imwrite(output_path, output_image)
 
     def get_bbx(self, bboxC,iw , ih):
-        return int(bboxC.xmin ), int(bboxC.ymin ), int((bboxC.xmin + bboxC.width) ),int((bboxC.ymin + bboxC.height) )
+        return int(bboxC.xmin/2 ), int(bboxC.ymin/2 ), int(((bboxC.xmin + bboxC.width)/2) ),int(((bboxC.ymin + bboxC.height)/2) )
         return int(bboxC.xmin * iw), int(bboxC.ymin * ih), int((bboxC.xmin + bboxC.width) * iw),int((bboxC.ymin + bboxC.height) * ih)
