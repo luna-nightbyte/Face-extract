@@ -42,8 +42,7 @@ class Model:
     def load(self, model, conf_unused):
         try:
             int(model) + 1
-            print("invalid model settings!")
-            return None
+            return f"invalid model settings"
         except:
             pass
         base_options = python.BaseOptions(model_asset_path=model)
@@ -53,8 +52,7 @@ class Model:
     def detect(self, rgb_image: cv2.typing.MatLike, image_path: str):
         image_bgr = cv2.imread(image_path)
         if image_bgr is None:
-            print("Image loading failed!")
-            return None
+            return f"Image loading failed!"
         # Convert to RGB for Mediapipe processing
         image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
         img = mediapipe.Image(image_format=mediapipe.ImageFormat.SRGB, data=image_rgb)

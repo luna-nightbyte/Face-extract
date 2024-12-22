@@ -48,7 +48,10 @@ def run():
         
     internal.face_detection.load_detector(modelName, args.confidence)
     if not internal.face_detection.is_initialyzed():
-        print("Error loading model")
+        if internal.face_detection.detector:
+            print(internal.face_detection.detector)
+        else:
+            print("unknown error loading model")
         return
     
     os.makedirs(output_dir, exist_ok=True)
