@@ -62,7 +62,7 @@ def run():
         err = internal.csv.close()
         if err:
             print(err)
-        
+    print(os.listdir(input_dir))
     for file in os.listdir(input_dir):
         if os.path.isfile(os.path.join(input_dir, file)):
             

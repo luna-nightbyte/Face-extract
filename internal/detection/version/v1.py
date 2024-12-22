@@ -15,6 +15,7 @@ class Model:
     def detect(self, rgb_image: cv2.typing.MatLike, image_path: str): 
         results = self.detector.process(rgb_image)
         if not results.detections:
+            print("no detetions..")
             return None
         
         return results
@@ -27,3 +28,6 @@ class Model:
     
     def save_image(self, output_path:str, image):
         image.save(output_path)
+        
+    def get_bbx(self, bboxC,iw , ih):
+        return int(bboxC.xmin * iw), int(bboxC.ymin * ih), int((bboxC.xmin + bboxC.width) * iw),int((bboxC.ymin + bboxC.height) * ih)

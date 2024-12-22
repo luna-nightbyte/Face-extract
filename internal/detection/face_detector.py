@@ -42,67 +42,100 @@ class Core:
     def save_image(self,output_path: str, image ):
         return self.model.save_image(output_path, image)
  
+    def bbox(self,bboxC,iw , ih ):
+        return self.model.get_bbx(bboxC=bboxC,iw=iw,ih=ih)
+ 
     def is_valid_model(self, model):
         return Core() == model
     
+    def run_detection_loop(self, image_path: str, OUTPUT_SIZE: tuple[int, int]):
+        print(f"Running detection loop for image: {image_path} with output size: {OUTPUT_SIZE}")
 
-    def run_detection_loop(self, image_path: str, OUTPUT_SIZE: tuple[512, 512]): 
- 
-        
+        # Load the image
         cv2Image = self.get_image(image_path)
         if cv2Image is None:
-            return
-        
+            print(f"Failed to load image from path: {image_path}")
+            return f"Failed to load image from {image_path}"
+
         ih, iw, _ = cv2Image.shape
-        
+        print(f"Image loaded with dimensions: {iw}x{ih}")
+
         # Detect faces
-        import internal.detection.face_detector as faceDet
         results = self.detect_face(cv2Image, image_path)
-        
         if not results:
+            print(f"Detection results are empty for image: {image_path}")
             return f"No detections in {image_path}"
-        
+
         if not results.detections:
+            print(f"No faces detected in image: {image_path}")
             return f"No face detected in {image_path}"
-        
-        
+
         for i, detection in enumerate(results.detections):
             bboxC = detection.location_data.relative_bounding_box
-            # Convert relative bounding box to absolute coordinates
-            x1 = int(bboxC.xmin * iw)
-            y1 = int(bboxC.ymin * ih)
-            x2 = int((bboxC.xmin + bboxC.width) * iw)
-            y2 = int((bboxC.ymin + bboxC.height) * ih)
+
+            # Convert bounding box to absolute coordinates
+            x1, x2, y1, y2 = self.bbox(bboxC, iw, ih)
+            x1 = int(x1 / 2)
+            x2 = int(x2 / 2)
+            y1 = int(y1 / 2)
+            y2 = int(y2 / 2)
+            
+            if x1 >= iw or y1 >= ih or x2 <= 0 or y2 <= 0:
+                print(f"Invalid bounding box after scaling: [x1={x1}, y1={y1}, x2={x2}, y2={y2}]")
+                return f"Invalid bounding box in {image_path}"
+            print(f"NEW Detection {i}: Bounding box [x1={x1}, y1={y1}, x2={x2}, y2={y2}]")
             # Calculate the center of the face
             center_x = (x1 + x2) // 2
             center_y = (y1 + y2) // 2
-            # Determine if resizing is needed
+            print(f"Face center: ({center_x}, {center_y})")
+
+            # Resize if necessary
             face_width, face_height = x2 - x1, y2 - y1
             was_resized = face_width > OUTPUT_SIZE[0] or face_height > OUTPUT_SIZE[1]
+            print(f"Face dimensions (width={face_width}, height={face_height}), resizing needed: {was_resized}")
+
             if was_resized:
                 scale = min(OUTPUT_SIZE[0] / face_width, OUTPUT_SIZE[1] / face_height)
+                print(f"Scaling factor: {scale}")
                 if scale <= 0:
-                    raise ValueError("Scale must be greater than 0")
+                    raise ValueError("Invalid scale factor")
 
                 cv2Image = cv2.resize(cv2Image, (int(iw * scale), int(ih * scale)))
                 center_x = int(center_x * scale)
                 center_y = int(center_y * scale)
                 ih, iw, _ = cv2Image.shape
-            # Define the crop region centered around the face
+                print(f"Image resized to: {iw}x{ih}")
+
+            # Define crop region
             half_size = OUTPUT_SIZE[0] // 2
             crop_x1, crop_y1 = max(0, center_x - half_size), max(0, center_y - half_size)
             crop_x2, crop_y2 = min(iw, center_x + half_size), min(ih, center_y + half_size)
-            # Ensure the crop region is exactly selected output size with padding if needed
+            print(f"Crop region: [x1={crop_x1}, y1={crop_y1}, x2={crop_x2}, y2={crop_y2}]")
+
+            # Add padding if necessary
             pad_x1, pad_y1 = max(0, half_size - center_x), max(0, half_size - center_y)
             pad_x2, pad_y2 = max(0, (center_x + half_size) - iw), max(0, (center_y + half_size) - ih)
+            print(f"Padding: [top={pad_y1}, bottom={pad_y2}, left={pad_x1}, right={pad_x2}]")
+
             cropped_img = cv2Image[crop_y1:crop_y2, crop_x1:crop_x2]
+            if cropped_img.size == 0:
+                print("Error: Cropping resulted in an empty image!")
+                return f"Empty crop region in {image_path}"
+
             padded_img = cv2.copyMakeBorder(
                 cropped_img,
                 pad_y1, pad_y2, pad_x1, pad_x2,
                 borderType=cv2.BORDER_CONSTANT,
                 value=[0, 0, 0]  # Black padding
             )
+            print(f"Padded image shape: {padded_img.shape}")
+
+            # Convert to PIL image
             output_image = Image.fromarray(padded_img)
             csv_data = [image_path, f"{center_x},{center_y}", was_resized, f"{x1},{y1},{x2},{y2}"]
+
+            # Debugging output
+            print(f"Output image generated for detection {i}")
+            print(f"CSV data: {csv_data}")
 
             return output_image, csv_data

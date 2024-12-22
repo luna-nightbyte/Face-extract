@@ -1,6 +1,8 @@
 import cv2
 import mediapipe
 import os
+import numpy
+
 from PIL import Image
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
@@ -60,12 +62,16 @@ class Model:
         return convert_detection_results_to_loop_format(results)
     
     def get_image(self, image_path: str ):
-        return cv2.imread(image_path)
-    
+        image = cv2.imread(image_path)
+        if image is None:
+            print("Image failed to load!")  # Debugging addition
+            return None
+        return image
     def save_image(self,output_path: str, image: Image.Image):
-        
-        tmp_image_path = output_path.replace(os.path.basename(output_path),f"tmp_{os.path.basename(output_path)}")
-        image.save(tmp_image_path)
-        out_image = mediapipe.Image.create_from_file(tmp_image_path)
-        cv2.imwrite(output_path, out_image)
-        os.remove(tmp_image_path)
+        image.save("test1.png")
+        output_image = numpy.array(image.convert('RGB'))
+        cv2.imwrite(output_path, output_image)
+
+    def get_bbx(self, bboxC,iw , ih):
+        return int(bboxC.xmin ), int(bboxC.ymin ), int((bboxC.xmin + bboxC.width) ),int((bboxC.ymin + bboxC.height) )
+        return int(bboxC.xmin * iw), int(bboxC.ymin * ih), int((bboxC.xmin + bboxC.width) * iw),int((bboxC.ymin + bboxC.height) * ih)
