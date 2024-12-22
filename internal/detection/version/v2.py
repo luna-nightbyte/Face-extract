@@ -68,10 +68,9 @@ class Model:
             return None
         return image
     def save_image(self,output_path: str, image: Image.Image):
-        image.save("test1.png")
         output_image = numpy.array(image.convert('RGB'))
         cv2.imwrite(output_path, output_image)
 
     def get_bbx(self, bboxC,iw , ih):
         return int(bboxC.xmin/2 ), int(bboxC.ymin/2 ), int(((bboxC.xmin + bboxC.width)/2) ),int(((bboxC.ymin + bboxC.height)/2) )
-        return int(bboxC.xmin * iw), int(bboxC.ymin * ih), int((bboxC.xmin + bboxC.width) * iw),int((bboxC.ymin + bboxC.height) * ih)
+   
