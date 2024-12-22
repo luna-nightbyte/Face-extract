@@ -3,6 +3,18 @@ import argparse
 import os
 import csv
 
+def init(version,model_sel,input_dir,output_dir, csv_path):
+    
+    class process:
+        def __init__(self,version,model_sel,input_dir,output_dir, csv_path):
+            import internal.detection.face_detector as faceDet
+            from internal import csv as i_csv
+            self.face_detection = faceDet.Core(version, model_sel)
+            self.csv = i_csv.CSV_class(csv_path)
+            self.input = input_dir
+            self.output = output_dir
+         
+    return process(version,model_sel,input_dir,output_dir, csv_path)
 # Initialize Mediapipe face detection
 def run():
     parser = argparse.ArgumentParser(description="Extract faces from images with an extra margin around the face.")
@@ -21,9 +33,7 @@ def run():
     csv_file = os.path.join(output_dir, args.csv)
     output_size = (args.size,args.size)
     
-    import internal.local as I
-    
-    internal = I.Internal(
+    internal = init(
         args.version,
         args.model_selection, 
         input_dir, 
@@ -53,7 +63,7 @@ def run():
     for file in os.listdir(input_dir):
         if os.path.isfile(os.path.join(input_dir, file)):
             
-            results = internal.face_detection.processor.run(os.path.join(input_dir, file),output_size, internal)
+            results = internal.face_detection.run_detection_loop(os.path.join(input_dir, file),output_size)
             
             if not results:
                 continue

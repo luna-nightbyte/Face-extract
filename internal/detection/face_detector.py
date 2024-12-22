@@ -4,47 +4,11 @@ import os
 import mediapipe as mp
 
 from PIL import Image
-from mediapipe.tasks import python
-from mediapipe.tasks.python import vision
 
-import internal.detection.detection as detection    
-
-class RelativeBoundingBox:
-    def __init__(self, x, y, width, height):
-        self.xmin = x
-        self.ymin = y
-        self.width = width
-        self.height = height
-
-class LocationData:
-    def __init__(self, bounding_box):
-        self.relative_bounding_box = bounding_box
-
-class DetectionWrapper:
-    def __init__(self, detection):
-        bbox = detection.bounding_box
-        self.location_data = LocationData(RelativeBoundingBox(bbox.origin_x, bbox.origin_y, bbox.width, bbox.height))
-
-class ResultsWrapper:
-    def __init__(self, detections):
-        self.detections = [DetectionWrapper(detection) for detection in detections]
-
-def convert_detection_results_to_loop_format(detection_results):
-    """
-    Converts detection results to a format compatible with the given loop.
-
-    Args:
-        detection_results: Original detection results.
-
-    Returns:
-        ResultsWrapper: Transformed detection results.
-    """
-    return ResultsWrapper(detection_results.detections)
-
+from internal.detection.version import v1, v2    
 
 class Core:
     def __init__(self,v: int, name):
-        self.processor = detection.Detection()
         self.detector = None
         self.version = v
         self.mod = None
@@ -53,10 +17,10 @@ class Core:
             print("invalid version")
             return
         if self.version == 1:
-            self.mod = self.v1()
+            self.model = v1.Model()
             self.modelName = name
         if self.version == 2:
-            self.mod = self.v2()
+            self.model = v2.Model()
             self.modelName = f"{name}"
         
     
@@ -67,83 +31,78 @@ class Core:
         return self.modelName  
     
     def load_detector(self, model, conf):
-        self.detector = self.mod.load(model,conf)
+        self.detector = self.model.load(model,conf)
         
     def detect_face(self, rgb_image: cv2.typing.MatLike, image_path: str ):
-        return self.mod.detect(rgb_image,image_path)
+        return self.model.detect(rgb_image,image_path)
     
     def get_image(self, image_path: str ):
-        return self.mod.get_image(image_path)
+        return self.model.get_image(image_path)
     
     def save_image(self,output_path: str, image ):
-        return self.mod.save_image(output_path, image)
+        return self.model.save_image(output_path, image)
  
     def is_valid_model(self, model):
         return Core() == model
     
 
-    class v2:
-        def load(self, model, conf_unused):
-            try:
-                int(model) + 1
-                print("invalid model settings!")
-                return None
-            except:
-                pass
-
-            base_options = python.BaseOptions(model_asset_path=model)
-            options = vision.FaceDetectorOptions(base_options=base_options)
-            self.detector = vision.FaceDetector.create_from_options(options)
-            return self.detector
-
-        def detect(self, rgb_image: cv2.typing.MatLike, image_path: str):
-            image_bgr = cv2.imread(image_path)
-            if image_bgr is None:
-                print("Image loading failed!")
-                return None
-
-            # Convert to RGB for Mediapipe processing
-            image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
-            img = mp.Image(image_format=mp.ImageFormat.SRGB, data=image_rgb)
-            results = self.detector.detect(img)
-            return convert_detection_results_to_loop_format(results)
-        
-        def get_image(self, image_path: str ):
-            return cv2.imread(image_path)
-        
-        def save_image(self,output_path: str, image: Image.Image):
-            
-            tmp_image_path = output_path.replace(os.path.basename(output_path),f"tmp_{os.path.basename(output_path)}")
-            image.save(tmp_image_path)
-            out_image = mp.Image.create_from_file(tmp_image_path)
-            cv2.imwrite(output_path, out_image)
-            os.remove(tmp_image_path)
+    def run_detection_loop(self, image_path: str, OUTPUT_SIZE: tuple[512, 512]): 
  
+        
+        cv2Image = self.get_image(image_path)
+        if cv2Image is None:
+            return
+        
+        ih, iw, _ = cv2Image.shape
+        
+        # Detect faces
+        import internal.detection.face_detector as faceDet
+        results = self.detect_face(cv2Image, image_path)
+        
+        if not results:
+            return f"No detections in {image_path}"
+        
+        if not results.detections:
+            return f"No face detected in {image_path}"
+        
+        
+        for i, detection in enumerate(results.detections):
+            bboxC = detection.location_data.relative_bounding_box
+            # Convert relative bounding box to absolute coordinates
+            x1 = int(bboxC.xmin * iw)
+            y1 = int(bboxC.ymin * ih)
+            x2 = int((bboxC.xmin + bboxC.width) * iw)
+            y2 = int((bboxC.ymin + bboxC.height) * ih)
+            # Calculate the center of the face
+            center_x = (x1 + x2) // 2
+            center_y = (y1 + y2) // 2
+            # Determine if resizing is needed
+            face_width, face_height = x2 - x1, y2 - y1
+            was_resized = face_width > OUTPUT_SIZE[0] or face_height > OUTPUT_SIZE[1]
+            if was_resized:
+                scale = min(OUTPUT_SIZE[0] / face_width, OUTPUT_SIZE[1] / face_height)
+                if scale <= 0:
+                    raise ValueError("Scale must be greater than 0")
 
-    class v1:
-        def load(self,model,conf):
-            try:
-                int(model)+1
-            except:
-                return "invalid model settings!"
-            self.detector = mp.solutions.face_detection.FaceDetection(
-                model_selection=model, 
-                min_detection_confidence=conf
-                )
-            
-            return self.detector
-        def detect(self, rgb_image: cv2.typing.MatLike, image_path: str): 
-            results = self.detector.process(rgb_image)
-            if not results.detections:
-                return None
-            
-            return results
-        
-        def get_image(self, image_path: str ):
-            image = cv2.imread(image_path)
-            if image is None:
-                return None
-            return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        
-        def save_image(self, output_path:str, image):
-            image.save(output_path)
+                cv2Image = cv2.resize(cv2Image, (int(iw * scale), int(ih * scale)))
+                center_x = int(center_x * scale)
+                center_y = int(center_y * scale)
+                ih, iw, _ = cv2Image.shape
+            # Define the crop region centered around the face
+            half_size = OUTPUT_SIZE[0] // 2
+            crop_x1, crop_y1 = max(0, center_x - half_size), max(0, center_y - half_size)
+            crop_x2, crop_y2 = min(iw, center_x + half_size), min(ih, center_y + half_size)
+            # Ensure the crop region is exactly selected output size with padding if needed
+            pad_x1, pad_y1 = max(0, half_size - center_x), max(0, half_size - center_y)
+            pad_x2, pad_y2 = max(0, (center_x + half_size) - iw), max(0, (center_y + half_size) - ih)
+            cropped_img = cv2Image[crop_y1:crop_y2, crop_x1:crop_x2]
+            padded_img = cv2.copyMakeBorder(
+                cropped_img,
+                pad_y1, pad_y2, pad_x1, pad_x2,
+                borderType=cv2.BORDER_CONSTANT,
+                value=[0, 0, 0]  # Black padding
+            )
+            output_image = Image.fromarray(padded_img)
+            csv_data = [image_path, f"{center_x},{center_y}", was_resized, f"{x1},{y1},{x2},{y2}"]
+
+            return output_image, csv_data
