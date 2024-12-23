@@ -7,16 +7,7 @@ This is intended as a project to extract a frame, modify it and place it back in
 
 
 ## Version
-[face_detector.py](https://github.com/luna-nightbyte/Face-extract/blob/main/internal/models/face_detector.py): contains two models that can be selected. 
-Use v1 for best results as v2 is not fully integrated.
-```python
-class v1:
-
-...
-
-class v2:
-```
-
+Choose between [v1](https://github.com/luna-nightbyte/Face-extract/blob/main/internal/detection/version/v1.py) and [v2](https://github.com/luna-nightbyte/Face-extract/blob/main/internal/detection/version/v2.py), but v1 gives best results.
 ## Requirements
 
 ```
